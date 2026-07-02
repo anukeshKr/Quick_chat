@@ -1,17 +1,33 @@
 import React from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
 import Profile from './pages/Profile'
+import { Toaster } from "react-hot-toast"
+import { toastConfig } from './lib/utils'
+import { useAuth } from '../context/AuthContext'
 
 const App = () => {
+  const { authUser, isCheckingAuth } = useAuth();
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#1a1a1a] text-white">
+        <div className="text-center">
+          <p className="text-xl font-semibold animate-pulse">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='bg-[url("./src/assets/bgImage.svg")] bg-cover'>
       <Routes>
-        <Route path='/' element={<Home/>}/>
-        <Route path='/login' element={<LoginPage/>}/>
-        <Route path='/profile' element={<Profile/>}/>
+        <Route path='/' element={authUser ? <Home /> : <Navigate to={"/login"} />} />
+        <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to={"/"} />} />
+        <Route path='/profile' element={authUser ? <Profile /> : <Navigate to={"/login"} />} />
       </Routes>
+      <Toaster {...toastConfig} />
     </div>
   )
 }

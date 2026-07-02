@@ -1,17 +1,48 @@
 import React, { useState } from 'react'
 import assets from '../assets/assets'
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
 
-    const [selectedImage, setSelectedImage] = useState(null);
+    const { authUser, updateProfile } = useAuth();
+    const [selectedImage, setSelectedImage] = useState(authUser.profilePic || null);
     const navigate = useNavigate();
-    const [name, setName] = useState('Martin Johnson');
-    const [bio, setBio] = useState("this is sample bio");
+    const [name, setName] = useState(authUser.fullName);
+    const [bio, setBio] = useState(authUser.bio);
+    const [saving, setSaving] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        navigate('/')
+        try {
+            setSaving(true)
+            if (!selectedImage) {
+                await updateProfile({ fullName: name, bio });
+                navigate('/');
+                return;
+            }
+
+            if (typeof selectedImage === "string") {
+                await updateProfile({ profilePic: selectedImage, fullName: name, bio });
+                navigate('/');
+                return;
+            }
+
+            const base64Img = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(selectedImage);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (error) => reject(error);
+            });
+
+            await updateProfile({ profilePic: base64Img, fullName: name, bio });
+            navigate('/');
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setSaving(false);
+        }
+
     }
     return (
         <div className='min-h-screen bg-cover bg-no-repeat flex items-center justify-center'>
@@ -21,7 +52,7 @@ const Profile = () => {
                     <h3 className='text-lg'>Profile details</h3>
                     <label htmlFor="avatar" className='flex items-center gap-3 cursor-pointer'>
                         <input type="file" onChange={(e) => setSelectedImage(e.target.files[0])} id='avatar' accept='.png, .jpg, .jpeg' hidden />
-                        <img src={selectedImage ? URL.createObjectURL(selectedImage) : assets.avatar_icon} alt="" className={`w-12 h-12 ${selectedImage && "rounded-full"}`} />
+                        <img src={selectedImage ? (typeof selectedImage === "string" ? selectedImage : URL.createObjectURL(selectedImage)) : assets.avatar_icon} alt="" className={`w-12 h-12 ${selectedImage && "rounded-full"}`} />
                         upload profile image
                     </label>
 
@@ -29,11 +60,12 @@ const Profile = () => {
 
                     <textarea required placeholder='Write profile bio' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500' rows={4} onChange={(e) => setBio(e.target.value)} value={bio}></textarea>
 
-                    <button type='submit' className='py-3 bg-linear-to-r from-purple-400 to-violet-600 text-white rounded-md cursor-pointer'>
-                        Save
+                    <button type='submit' disabled={saving} className='py-3 bg-linear-to-r from-purple-400 to-violet-600 text-white rounded-md cursor-pointer disabled:from-gray-500 disabled:to-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed transitions-all duration-200'>
+                        {saving ? "Saving..." : "Save"}
                     </button>
+
                 </form>
-                <img src={assets.logo_icon} alt="" className='max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10' />
+                <img src={authUser?.profilePic || assets.logo_icon} alt="" className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImage && "rounded-full"}`} />
             </div>
 
         </div>
