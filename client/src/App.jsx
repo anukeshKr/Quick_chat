@@ -6,6 +6,7 @@ import Profile from './pages/Profile'
 import { Toaster } from "react-hot-toast"
 import { toastConfig } from './lib/utils'
 import { useAuth } from '../context/AuthContext'
+import bgImage from "./assets/bgImage.svg"
 
 const App = () => {
   const { authUser, isCheckingAuth } = useAuth();
@@ -21,7 +22,9 @@ const App = () => {
   }
 
   return (
-    <div className='bg-[url("./src/assets/bgImage.svg")] bg-cover'>
+    <div className='bg-cover'
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
       <Routes>
         <Route path='/' element={authUser ? <Home /> : <Navigate to={"/login"} />} />
         <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to={"/"} />} />
